@@ -1,7 +1,9 @@
 <?php
-namespace zusux;
+namespace app\index\tools;
 use Elasticsearch\ClientBuilder;
-use Exception;
+use org\Elasticsearch;
+use think\Exception;
+
 /**
  * Created by PhpStorm.
  * User: zusux
@@ -9,7 +11,7 @@ use Exception;
  * Time: 10:13
  * @author  zusux
  */
-class Elastic{
+class elastic{
     protected $_table; //索引
     protected $_page; //分页
     protected $_limit = 20; //查询数量
@@ -230,6 +232,19 @@ class Elastic{
         return $response['_shards']['successful'] ?? 0;
     }
 
+    public function upsert($id,$field=[]){
+        $client = ClientBuilder::create()->build();
+        $params = [
+            'index' => $this->_table,
+            'id' => $id,
+            'body' => $field // 此条数据的内容，数组可以任意定义。
+        ];
+        $this->reset();
+        $response = $client->update($params);
+
+    }
+
+
     /**
      * 获取一条记录
      * @return false|array
@@ -263,6 +278,27 @@ class Elastic{
         $response = $client->delete($params);
         return $response['_shards']['successful'] ?? 0;
     }
+
+    /*
+     * @desc 删除查询条记录
+     * @return number|false
+     */
+    public function deleteByQuery(){
+        $client = ClientBuilder::create()->build();
+        $params = [
+            'index' => $this->_table,
+            'body' => [
+            ]
+        ];
+        if(!empty($this->_where)){
+            $params['body']['query'] = ['bool'=>$this->_where];
+        }
+        $this->reset();
+        $response = $client->deleteByQuery($params);
+        return $response["deleted"] ?? false;
+    }
+
+
 
     /*
      * 删除索引
@@ -322,5 +358,3 @@ class Elastic{
     }
 
 }
-
-

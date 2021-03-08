@@ -232,16 +232,27 @@ class elastic{
         return $response['_shards']['successful'] ?? 0;
     }
 
-    public function upsert($id,$field=[]){
+    /*
+     * 没有则创建
+     * 有则更新
+     */
+    public function upsert($id,$update=[],$insert=[]){
         $client = ClientBuilder::create()->build();
         $params = [
             'index' => $this->_table,
             'id' => $id,
-            'body' => $field // 此条数据的内容，数组可以任意定义。
+            'body' => [
+                "doc"=>$update,
+                "upsert"=>$insert,
+            ] // 此条数据的内容，数组可以任意定义。
         ];
         $this->reset();
         $response = $client->update($params);
-
+        $failed = $response['_shards']['failed'] ?? false;
+        if($failed){
+            return false;
+        }
+        return true;
     }
 
 
